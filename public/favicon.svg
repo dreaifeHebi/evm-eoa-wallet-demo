@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="EOA Wallet Lab">
+  <rect width="64" height="64" rx="12" fill="#0f766e"/>
+  <path d="M18 24h28a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6Z" fill="#ffffff"/>
+  <path d="M20 18h22a5 5 0 0 1 5 5v3H18v-6a2 2 0 0 1 2-2Z" fill="#d7f2ee"/>
+  <circle cx="43" cy="37" r="4" fill="#f59e0b"/>
+</svg>
