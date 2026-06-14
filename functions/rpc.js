@@ -1,7 +1,33 @@
 const RPC_TARGET_ERROR = "RPC_TARGET_URL is not configured for this Pages deployment.";
+const ALLOWED_RPC_METHODS = new Set([
+  "eth_blockNumber",
+  "eth_chainId",
+  "eth_estimateGas",
+  "eth_feeHistory",
+  "eth_gasPrice",
+  "eth_getBalance",
+  "eth_getBlockByNumber",
+  "eth_getTransactionByHash",
+  "eth_getTransactionCount",
+  "eth_getTransactionReceipt",
+  "eth_maxPriorityFeePerGas",
+  "eth_sendRawTransaction"
+]);
 
 function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function rpcError(id, code, message, data) {
+  return {
+    jsonrpc: "2.0",
+    id,
+    error: {
+      code,
+      message,
+      ...(data ? { data } : {})
+    }
+  };
 }
 
 function jsonResponse(body, status) {
@@ -13,9 +39,71 @@ function jsonResponse(body, status) {
   });
 }
 
+function validateRpcPayload(requestBody) {
+  let payload;
+
+  try {
+    payload = JSON.parse(requestBody);
+  } catch {
+    return {
+      ok: false,
+      status: 400,
+      body: rpcError(null, -32700, "Invalid JSON-RPC payload.")
+    };
+  }
+
+  const requests = Array.isArray(payload) ? payload : [payload];
+
+  if (requests.length === 0) {
+    return {
+      ok: false,
+      status: 400,
+      body: rpcError(null, -32600, "Empty JSON-RPC batch is not allowed.")
+    };
+  }
+
+  const blocked = requests
+    .map((request) => {
+      const id =
+        request && typeof request === "object" && "id" in request ? request.id : null;
+      const method =
+        request && typeof request === "object" && typeof request.method === "string"
+          ? request.method
+          : "";
+
+      if (!method) {
+        return rpcError(id, -32600, "JSON-RPC request must include a method.");
+      }
+
+      if (!ALLOWED_RPC_METHODS.has(method)) {
+        return rpcError(id, -32601, "JSON-RPC method is not allowed by this proxy.", {
+          method
+        });
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+
+  if (blocked.length > 0) {
+    return {
+      ok: false,
+      status: 403,
+      body: Array.isArray(payload) ? blocked : blocked[0]
+    };
+  }
+
+  return { ok: true };
+}
+
 export async function onRequestPost(context) {
   const rpcTargetUrl = context.env.RPC_TARGET_URL;
   const requestBody = await context.request.text();
+
+  const validation = validateRpcPayload(requestBody);
+  if (!validation.ok) {
+    return jsonResponse(validation.body, validation.status);
+  }
 
   if (!rpcTargetUrl) {
     return jsonResponse({ error: RPC_TARGET_ERROR }, 500);
