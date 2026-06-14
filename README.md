@@ -5,7 +5,7 @@ Minimal browser-only EVM EOA wallet demo.
 ## Features
 
 - Create a random secp256k1 EOA wallet.
-- Import a private key.
+- Import a private key or seed phrase. Seed phrase import uses `m/44'/60'/0'/0/0`.
 - Save and unlock an encrypted ethers JSON keystore in browser localStorage.
 - Generate an EIP-191 login-style request, sign it, and recover the signer.
 - Sign and verify EIP-712 typed data.

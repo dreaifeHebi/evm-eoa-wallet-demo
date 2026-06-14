@@ -44,6 +44,7 @@ type RecoveredStructure = {
 
 const VAULT_KEY = "eoa-wallet-lab:vault-json";
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const DEFAULT_DERIVATION_PATH = "m/44'/60'/0'/0/0";
 
 function makeNonce() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
@@ -68,7 +69,7 @@ function shortHex(value?: string, head = 14, tail = 10) {
 
 function mnemonicPhrase(activeWallet: EoaWallet | null) {
   if (!activeWallet || !("mnemonic" in activeWallet) || !activeWallet.mnemonic) {
-    return "Only random HD wallets show a mnemonic.";
+    return "Only mnemonic-backed HD wallets show a phrase.";
   }
   return activeWallet.mnemonic.phrase;
 }
@@ -171,6 +172,7 @@ function App() {
   const [wallet, setWallet] = useState<EoaWallet | null>(null);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [importKey, setImportKey] = useState("");
+  const [seedPhrase, setSeedPhrase] = useState("");
   const [vaultPassword, setVaultPassword] = useState("");
   const [vaultAddress, setVaultAddress] = useState(getStoredVaultAddress);
   const [activeTab, setActiveTab] = useState<TabId>("sign");
@@ -452,6 +454,16 @@ function App() {
       const nextWallet = new ethers.Wallet(importKey.trim());
       setImportKey("");
       selectWallet(nextWallet, "Imported wallet");
+    });
+  }
+
+  function importSeedPhrase() {
+    withErrorBoundary(async () => {
+      const phrase = seedPhrase.trim().replace(/\s+/g, " ");
+      if (!phrase) throw new Error("Enter a seed phrase to import.");
+      const nextWallet = ethers.HDNodeWallet.fromPhrase(phrase, "", DEFAULT_DERIVATION_PATH);
+      setSeedPhrase("");
+      selectWallet(nextWallet, `Imported seed phrase at ${DEFAULT_DERIVATION_PATH}`);
     });
   }
 
@@ -802,7 +814,23 @@ function App() {
             </Field>
             <button className="secondary-button full-width" onClick={importWallet} disabled={!importKey.trim()}>
               <Unlock size={16} />
-              Import
+              Import private key
+            </button>
+
+            <Field label="Import seed phrase">
+              <textarea
+                value={seedPhrase}
+                onChange={(event) => setSeedPhrase(event.target.value)}
+                placeholder="twelve or twenty four words"
+                spellCheck={false}
+              />
+            </Field>
+            <p className="hint">
+              Seed phrase import automatically uses account path {DEFAULT_DERIVATION_PATH}.
+            </p>
+            <button className="secondary-button full-width" onClick={importSeedPhrase} disabled={!seedPhrase.trim()}>
+              <Unlock size={16} />
+              Import seed
             </button>
 
             <div className="divider" />
