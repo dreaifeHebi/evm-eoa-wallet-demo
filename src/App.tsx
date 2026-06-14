@@ -52,6 +52,13 @@ function makeNonce() {
 }
 
 function defaultRpcUrl() {
+  const configured = import.meta.env.VITE_RPC_URL;
+  if (configured) return configured;
+
+  if (globalThis.location?.protocol === "https:") {
+    return new URL("/rpc", globalThis.location.origin).toString();
+  }
+
   const host = globalThis.location?.hostname || "127.0.0.1";
   return `http://${host}:8545`;
 }
