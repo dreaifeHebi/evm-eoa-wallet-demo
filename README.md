@@ -56,3 +56,7 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+## License
+
+Apache-2.0. See [LICENSE](./LICENSE).
